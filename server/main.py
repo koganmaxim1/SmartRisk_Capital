@@ -16,7 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 # Load Excel file once
-excel_file_path = r"C:\Projects\MVP_SmartRisk_Capital\server\stocks_data_MVP.csv"
+excel_file_path = r"C:\Projects\SmartRisk_Capital\server\stocks_data_MVP.csv"
 stocks_data_df = pd.read_csv(excel_file_path)
 
 @app.post("/stocks/CalculateSpreadStocks")

@@ -263,9 +263,9 @@ export default function UserPreferences() {
                 )}
               />\
             <div style={{display:'flex', justifyContent:'center', gap:'50px'}}>
-              <Button type="primary">222222</Button>
-              <Button type="primary">322222</Button>
-              <Button type="primary">422222</Button>
+              <Button type="primary">Increase expected return by adding another share</Button>
+              <Button type="primary">Monte Carlo Simulation</Button>
+              <Button type="primary">Reduce risk by adding another share</Button>
             </div>
             </div>
           </div>
