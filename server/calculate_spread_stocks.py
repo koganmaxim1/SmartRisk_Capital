@@ -2,15 +2,19 @@ import itertools
 import pandas as pd
 import numpy as np
 from pydantic import BaseModel
-from typing import List
+from typing import  List, Dict
 import cvxpy as cp
 
+
+class SelectedStock(BaseModel):
+    name: str
+    minimum_weight: int
 
 class StockRequest(BaseModel):
     risk_percentage: float
     amount_of_stocks: int
     money_to_invest: float
-    selected_stocks: List[str]
+    selected_stocks: List[SelectedStock]
     portfolio_target: str
 
 
@@ -19,10 +23,12 @@ class CalculateSpreadStocks:
         self.risk = request.risk_percentage
         self.n = request.amount_of_stocks
         self.money_to_invest = request.money_to_invest
-        self.selected_stocks = request.selected_stocks
+        self.selected_stocks = [stock.name for stock in request.selected_stocks]
         self.target = request.portfolio_target
         self.stocks_portfolio_df = None
         self.selected_stocks_data = data.loc[data["symbol"].isin(self.selected_stocks)]
+        weights_map = {stock.name: stock.minimum_weight for stock in request.selected_stocks}
+        self.selected_stocks_data["min_weight"] = self.selected_stocks_data["symbol"].map(weights_map)
         self.optimal_portfolio_df =None
         self.portfolio_std = None
 
@@ -195,10 +201,11 @@ class CalculateSpreadStocks:
         portfolio_variance = cp.quad_form(w, cov_matrix)
         objective = cp.Minimize(portfolio_variance)
 
-        # Constraints: weights sum to 1, no short-selling
+        # Constraints: weights sum to 1, no short-selling, and minimum weight (converted from percentage)
+        min_weights = df['min_weight'].values / 100  # Convert from % to fraction
         constraints = [
             cp.sum(w) == 1,
-            w >= 0
+            w >= min_weights
         ]
 
         problem = cp.Problem(objective, constraints)
@@ -216,10 +223,7 @@ class CalculateSpreadStocks:
         result_df['weight'] = result_df['weight'].round(6)
         result_df['investment'] = result_df['investment'].round(2)
 
-        # Store result in the class
         self.optimal_portfolio_df = result_df
-
-        # Also return portfolio std deviation
         portfolio_std = np.sqrt(weights.T @ cov_matrix @ weights)
         self.portfolio_std = float(round(portfolio_std, 6))
 
