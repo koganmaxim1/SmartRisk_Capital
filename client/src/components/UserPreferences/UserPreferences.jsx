@@ -23,7 +23,6 @@ export default function UserPreferences() {
   const [selectedStocks, setSelectedStocks] = useState([]);
   const [stocksSpred, setStocksSpred] = useState(null);
   const [portfolioSTD, setPortfolioSTD] = useState(null);
-  const [portfolioExpectedReturn, setPortfolioExpectedReturn] = useState(null);
   const [stocksData, setStocksData] = useState([]);
   const [openModalIndex, setOpenModalIndex] = useState(null);
   const [loadingStocksSpred, setLoadingStocksSpred] = useState(false);
@@ -76,7 +75,6 @@ export default function UserPreferences() {
       const response = await axios.post('http://localhost:8000/stocks/CalculateSpreadStocks', requestPayload);
       setStocksSpred(response.data.portfolio);
       setPortfolioSTD(response.data.portfolio_std);
-      setPortfolioExpectedReturn(response.data.portfolio_expected_return);
     } catch (error) {
       console.error('❌ Error calculating stock spread:', error);
       setStocksSpred([]);
@@ -297,19 +295,9 @@ export default function UserPreferences() {
                 summary={() => (
                   <Table.Summary.Row>
                     <Table.Summary.Cell index={0} colSpan={generateColumnsFromData(stocksSpred).length}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <Text strong>📊 Portfolio Standard Deviation:{' '}
-                          {typeof portfolioSTD === 'number' ? portfolioSTD.toFixed(6) : 'N/A'}
-                        </Text>
-                        <Text strong>🎯 Risk Percentage:{' '}
-                          {typeof portfolioSTD === 'number' ? 
-                            Math.round((portfolioSTD - 0.003) * 99 / (0.060 - 0.003) + 1) + '%' : 'N/A'}
-                        </Text>
-                        <Text strong>📈 Expected Return:{' '}
-                          {typeof portfolioExpectedReturn === 'number' ? 
-                            (portfolioExpectedReturn * 100).toFixed(2) + '%' : 'N/A'}
-                        </Text>
-                      </div>
+                      <Text strong>📊 Portfolio Standard Deviation:{' '}
+                        {typeof portfolioSTD === 'number' ? portfolioSTD.toFixed(6) : 'N/A'}
+                      </Text>
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
                 )}
