@@ -43,11 +43,12 @@ class CalculateSpreadStocks:
         self.calculate_corr_between_each_2_stocks()
 
         # Build N-stock optimal portfolio
-        portfolio_df, std = self.build_optimal_portfolio()
+        portfolio_df, std, expected_return = self.build_optimal_portfolio()
 
         return {
             "portfolio": portfolio_df.to_dict(orient="records"),
-            "portfolio_std": std
+            "portfolio_std": std,
+            "portfolio_expected_return": expected_return
         }
 
 
@@ -205,6 +206,10 @@ class CalculateSpreadStocks:
         symbols = df['symbol'].tolist()
         n = len(symbols)
 
+        # Get expected returns if available
+        expected_returns = df['expected_return'].values if 'expected_return' in df.columns else np.zeros(n)
+        
+        # Calculate standard deviations
         std_dict = dict(zip(df['symbol'], df['standard_deviation']))
 
         # Build covariance matrix
@@ -222,16 +227,26 @@ class CalculateSpreadStocks:
         # Define optimization variable
         w = cp.Variable(n)
 
-        # Objective: Minimize portfolio variance
-        portfolio_variance = cp.quad_form(w, cov_matrix)
-        objective = cp.Minimize(portfolio_variance)
+        # Convert risk percentage to target standard deviation
+        # Linear mapping: 1% -> 0.003, 100% -> 0.060
+        target_std = 0.003 + (self.risk - 1) * (0.060 - 0.003) / 99
 
-        # Constraints: weights sum to 1, no short-selling, and minimum weight (converted from percentage)
-        min_weights = df['min_weight'].values / 100  # Convert from % to fraction
-        constraints = [
-            cp.sum(w) == 1,
-            w >= min_weights
-        ]
+        if self.target == "min":
+            # Objective: Minimize portfolio variance
+            portfolio_variance = cp.quad_form(w, cov_matrix)
+            objective = cp.Minimize(portfolio_variance)
+            constraints = [
+                cp.sum(w) == 1,
+                w >= df['min_weight'].values / 100  # Convert from % to fraction
+            ]
+        else:  # "max" mode
+            # Objective: Maximize expected return
+            objective = cp.Maximize(expected_returns @ w)
+            constraints = [
+                cp.sum(w) == 1,
+                w >= df['min_weight'].values / 100,  # Convert from % to fraction
+                cp.quad_form(w, cov_matrix) <= target_std ** 2  # Risk constraint
+            ]
 
         problem = cp.Problem(objective, constraints)
         problem.solve()
@@ -251,8 +266,11 @@ class CalculateSpreadStocks:
         self.optimal_portfolio_df = result_df
         portfolio_std = np.sqrt(weights.T @ cov_matrix @ weights)
         self.portfolio_std = float(round(portfolio_std, 6))
+        
+        # Calculate portfolio expected return
+        portfolio_expected_return = float(round(np.sum(weights * expected_returns), 6))
 
-        return result_df, self.portfolio_std
+        return result_df, self.portfolio_std, portfolio_expected_return
 
 
 if __name__ == "__main__":
