@@ -4,11 +4,7 @@ import numpy as np
 from pydantic import BaseModel
 from typing import  List, Dict
 import cvxpy as cp
-import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 class SelectedStock(BaseModel):
     name: str
@@ -30,11 +26,10 @@ class CalculateSpreadStocks:
         self.selected_stocks = [stock.name for stock in request.selected_stocks]
         self.target = request.portfolio_target
         self.stocks_portfolio_df = None
-        # Convert data to DataFrame if it's not already
-        self.selected_stocks_data = pd.DataFrame(data.loc[data["symbol"].isin(self.selected_stocks)])
+        self.selected_stocks_data = data.loc[data["symbol"].isin(self.selected_stocks)]
         weights_map = {stock.name: stock.minimum_weight for stock in request.selected_stocks}
         self.selected_stocks_data["min_weight"] = self.selected_stocks_data["symbol"].map(weights_map)
-        self.optimal_portfolio_df = None
+        self.optimal_portfolio_df =None
         self.portfolio_std = None
 
     def main(self):
@@ -53,22 +48,20 @@ class CalculateSpreadStocks:
 
     def add_daily_change_to_each_stock(self):
         # Load Excel file
-        xls = pd.ExcelFile(r"C:\Users\Kogan\OneDrive\שולחן העבודה\סטארטאפ\SmartRisk Capital\נתונים לMVP\69DD2E10.xlsx")
+        xls = pd.ExcelFile(r"C:\Users\Kogan\OneDrive\שולחן העבודה\סטארטאפ\SmartRisk Capital\נתוני חברות לסטארטאפ.xlsx")
 
         # Add empty column
         self.selected_stocks_data['Change_data'] = None
 
         # Fill Change_data for each stock that has a matching sheet
-        for idx in self.selected_stocks_data.index:
-            symbol = self.selected_stocks_data.loc[idx, 'symbol']
-            if symbol in xls.sheet_names:
-                df = xls.parse(symbol)
-                if 'Change' in df.columns and 'Date' in df.columns:
-                    # Create list of dictionaries with date and change
-                    change_data = [{'date': date, 'change': change} 
-                                 for date, change in zip(df['Date'], df['Change']) 
-                                 if pd.notna(change)]
-                    self.selected_stocks_data.at[idx, 'Change_data'] = change_data
+        for idx, row in self.selected_stocks_data.iterrows():
+            symbol = row['symbol']
+            for idx, row in self.selected_stocks_data.iterrows():
+                symbol = row['symbol']
+                if symbol in xls.sheet_names:
+                    df = xls.parse(symbol)
+                    if 'Change' in df.columns:
+                        self.selected_stocks_data.at[idx, 'Change_data'] = df['Change'].dropna().tolist()
 
     def calculate_cov_between_each_2_stocks(self):
         change_dict = dict(zip(self.selected_stocks_data['symbol'], self.selected_stocks_data['Change_data']))
@@ -81,24 +74,8 @@ class CalculateSpreadStocks:
                     return np.nan  # same stock -> skip
                 if this_change is None or other_change is None:
                     return np.nan
-
-                # Create dictionaries for faster date lookup
-                this_changes = {item['date']: item['change'] for item in this_change}
-                other_changes = {item['date']: item['change'] for item in other_change}
-
-                # Find common dates
-                common_dates = set(this_changes.keys()) & set(other_changes.keys())
-                if not common_dates:
-                    logger.info(f"No common dates found between {this_symbol} and {other_symbol}")
-                    return np.nan
-
-                # Get aligned changes for common dates
-                this_aligned = [this_changes[date] for date in common_dates]
-                other_aligned = [other_changes[date] for date in common_dates]
-
-                cov_value = np.cov(this_aligned, other_aligned)[0, 1]
-                logger.info(f"Covariance between {this_symbol} and {other_symbol}: {cov_value:.6f} (using {len(common_dates)} common dates)")
-                return cov_value
+                min_len = min(len(this_change), len(other_change))
+                return np.cov(this_change[:min_len], other_change[:min_len])[0, 1]
 
             self.selected_stocks_data[f'{other_symbol}_COV'] = self.selected_stocks_data.apply(cov_with_other, axis=1)
 
@@ -107,9 +84,7 @@ class CalculateSpreadStocks:
         std_dict = dict(
             zip(
                 self.selected_stocks_data['symbol'],
-                self.selected_stocks_data['Change_data'].apply(
-                    lambda x: np.std([item['change'] for item in x]) if x is not None else np.nan
-                )
+                self.selected_stocks_data['Change_data'].apply(lambda x: np.std(x) if x is not None else np.nan)
             )
         )
 
@@ -257,7 +232,7 @@ class CalculateSpreadStocks:
 
 if __name__ == "__main__":
     # Load Excel file once
-    excel_file_path = "C:\Projects\SmartRisk_Capital\server\stocks_data_MVP.csv"
+    excel_file_path = "C:\Projects\MVP_SmartRisk_Capital\server\stocks_data_MVP.csv"
     data_df = pd.read_csv(excel_file_path)
     mock_request = StockRequest(
         risk_percentage=25.0,
