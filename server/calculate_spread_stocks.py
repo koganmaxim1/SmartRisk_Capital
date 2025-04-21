@@ -205,6 +205,13 @@ class CalculateSpreadStocks:
         symbols = df['symbol'].tolist()
         n = len(symbols)
 
+        # Get expected returns from the data
+        expected_returns = df['expected_return'].values if 'expected_return' in df.columns else np.zeros(n)
+        
+        # Convert risk percentage to target standard deviation
+        # Linear mapping: 1% -> 0.003, 100% -> 0.060
+        target_std = 0.003 + (self.risk - 1) * (0.060 - 0.003) / 99
+
         std_dict = dict(zip(df['symbol'], df['standard_deviation']))
 
         # Build covariance matrix
@@ -222,16 +229,23 @@ class CalculateSpreadStocks:
         # Define optimization variable
         w = cp.Variable(n)
 
-        # Objective: Minimize portfolio variance
-        portfolio_variance = cp.quad_form(w, cov_matrix)
-        objective = cp.Minimize(portfolio_variance)
-
         # Constraints: weights sum to 1, no short-selling, and minimum weight (converted from percentage)
         min_weights = df['min_weight'].values / 100  # Convert from % to fraction
         constraints = [
             cp.sum(w) == 1,
             w >= min_weights
         ]
+
+        if self.target == "min":
+            # Objective: Minimize portfolio variance
+            portfolio_variance = cp.quad_form(w, cov_matrix)
+            objective = cp.Minimize(portfolio_variance)
+        else:  # "max" mode
+            # Add risk constraint
+            portfolio_variance = cp.quad_form(w, cov_matrix)
+            constraints.append(portfolio_variance <= target_std**2)
+            # Objective: Maximize expected return
+            objective = cp.Maximize(w @ expected_returns)
 
         problem = cp.Problem(objective, constraints)
         problem.solve()
@@ -243,10 +257,12 @@ class CalculateSpreadStocks:
         result_df = pd.DataFrame({
             'symbol': symbols,
             'weight': weights,
-            'investment': weights * self.money_to_invest
+            'investment': weights * self.money_to_invest,
+            'expected_return': expected_returns
         })
         result_df['weight'] = result_df['weight'].round(6)
         result_df['investment'] = result_df['investment'].round(2)
+        result_df['expected_return'] = result_df['expected_return'].round(6)
 
         self.optimal_portfolio_df = result_df
         portfolio_std = np.sqrt(weights.T @ cov_matrix @ weights)

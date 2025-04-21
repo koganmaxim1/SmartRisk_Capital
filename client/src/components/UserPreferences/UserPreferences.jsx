@@ -145,9 +145,11 @@ export default function UserPreferences() {
 
             {portfolioTarget === 'max' && (
               <div>
-                <Text strong style={{ color: '#ffffff' }}>⚖️ Risk Percentage: {riskPercentage}%</Text>
+                <Text strong style={{ color: '#ffffff' }}>
+                  ⚖️ Risk Level: {riskPercentage}% (Target Std: {(0.003 + (riskPercentage - 1) * (0.060 - 0.003) / 99).toFixed(6)})
+                </Text>
                 <Slider
-                  min={5}
+                  min={1}
                   max={100}
                   value={riskPercentage}
                   onChange={(value) => setRiskPercentage(value)}
@@ -295,18 +297,20 @@ export default function UserPreferences() {
                 summary={() => (
                   <Table.Summary.Row>
                     <Table.Summary.Cell index={0} colSpan={generateColumnsFromData(stocksSpred).length}>
-                      <Text strong>📊 Portfolio Standard Deviation:{' '}
-                        {typeof portfolioSTD === 'number' ? portfolioSTD.toFixed(6) : 'N/A'}
-                      </Text>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Text strong>📊 Portfolio Standard Deviation:{' '}
+                          {typeof portfolioSTD === 'number' ? portfolioSTD.toFixed(6) : 'N/A'}
+                        </Text>
+                        <Text strong>📈 Portfolio Expected Return:{' '}
+                          {stocksSpred && stocksSpred.length > 0 
+                            ? (stocksSpred.reduce((sum, stock) => sum + (stock.weight * stock.expected_return), 0) * 100).toFixed(2) + '%'
+                            : 'N/A'}
+                        </Text>
+                      </div>
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
                 )}
-              />\
-            <div style={{display:'flex', justifyContent:'center', gap:'50px'}}>
-              <Button type="primary">Increase expected return by adding another share</Button>
-              <Button type="primary">Monte Carlo Simulation</Button>
-              <Button type="primary">Reduce risk by adding another share</Button>
-            </div>
+              />
             </div>
           </div>
         </Card>
