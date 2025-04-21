@@ -297,15 +297,20 @@ export default function UserPreferences() {
                 summary={() => (
                   <Table.Summary.Row>
                     <Table.Summary.Cell index={0} colSpan={generateColumnsFromData(stocksSpred).length}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Text strong>📊 Portfolio Standard Deviation:{' '}
-                          {typeof portfolioSTD === 'number' ? portfolioSTD.toFixed(6) : 'N/A'}
-                        </Text>
-                        <Text strong>📈 Portfolio Expected Return:{' '}
-                          {stocksSpred && stocksSpred.length > 0 
-                            ? (stocksSpred.reduce((sum, stock) => sum + (stock.weight * stock.expected_return), 0) * 100).toFixed(2) + '%'
-                            : 'N/A'}
-                        </Text>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Text strong>📊 Portfolio Standard Deviation: {typeof portfolioSTD === 'number' ? portfolioSTD.toFixed(6) : 'N/A'}</Text>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Text strong>📈 Portfolio Expected Return: {
+                            stocksSpred && stocksSpred.length > 0 
+                              ? (stocksSpred.reduce((sum, stock) => sum + (stock.weight * stock.expected_return), 0) * 100).toFixed(2) + '%'
+                              : 'N/A'
+                          }</Text>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Text strong>🎯 Risk Level: {riskPercentage}%</Text>
+                        </div>
                       </div>
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
