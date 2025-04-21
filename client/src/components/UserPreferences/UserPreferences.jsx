@@ -26,7 +26,8 @@ export default function UserPreferences() {
   const [stocksData, setStocksData] = useState([]);
   const [openModalIndex, setOpenModalIndex] = useState(null);
   const [loadingStocksSpred, setLoadingStocksSpred] = useState(false);
-  const [totalMinimumWeight, setTotalMinimumWeight] = useState(0)
+  const [totalMinimumWeight, setTotalMinimumWeight] = useState(0);
+  const [riskAdjusted, setRiskAdjusted] = useState(false);
 
   useEffect(() => {
     const fetchStocksData = async () => {
@@ -64,6 +65,7 @@ export default function UserPreferences() {
 
   const calculateStocksSpred = async () => {
     setLoadingStocksSpred(true);
+    setRiskAdjusted(false);
     try {
       const requestPayload = {
         risk_percentage: riskPercentage,
@@ -75,6 +77,10 @@ export default function UserPreferences() {
       const response = await axios.post('http://localhost:8000/stocks/CalculateSpreadStocks', requestPayload);
       setStocksSpred(response.data.portfolio);
       setPortfolioSTD(response.data.portfolio_std);
+      if (response.data.risk_percentage !== riskPercentage) {
+        setRiskPercentage(response.data.risk_percentage);
+        setRiskAdjusted(true);
+      }
     } catch (error) {
       console.error('❌ Error calculating stock spread:', error);
       setStocksSpred([]);
@@ -277,6 +283,11 @@ export default function UserPreferences() {
               style={{ minWidth: '260px', flex: '1', backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '10px' }}
               bodyStyle={{ padding: '16px 20px' }}
             >
+              {riskAdjusted && (
+                <div style={{ marginBottom: '16px', padding: '8px', backgroundColor: '#fffbe6', borderRadius: '4px' }}>
+                  <Text type="warning">⚠️ Selected risk level was too low — showing minimum risk portfolio instead.</Text>
+                </div>
+              )}
               <p><Text strong>Risk Percentage:</Text> {riskPercentage}%</p>
               <p><Text strong>Amount of Stocks:</Text> {amountOfStocks}</p>
               <p><Text strong>Money to Invest:</Text> ${moneyToInvest}</p>

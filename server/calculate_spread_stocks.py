@@ -43,11 +43,12 @@ class CalculateSpreadStocks:
         self.calculate_corr_between_each_2_stocks()
 
         # Build N-stock optimal portfolio
-        portfolio_df, std = self.build_optimal_portfolio()
+        portfolio_df, std, risk = self.build_optimal_portfolio()
 
         return {
             "portfolio": portfolio_df.to_dict(orient="records"),
-            "portfolio_std": std
+            "portfolio_std": std,
+            "risk_percentage": risk
         }
 
 
@@ -236,6 +237,23 @@ class CalculateSpreadStocks:
             w >= min_weights
         ]
 
+        # First calculate minimum risk portfolio to get minimum achievable std
+        if self.target == "max":
+            min_risk_objective = cp.Minimize(cp.quad_form(w, cov_matrix))
+            min_risk_problem = cp.Problem(min_risk_objective, constraints)
+            min_risk_problem.solve()
+            
+            if w.value is None:
+                raise ValueError("❌ Minimum risk optimization failed — check inputs")
+            
+            min_risk_weights = w.value
+            min_achievable_std = np.sqrt(min_risk_weights.T @ cov_matrix @ min_risk_weights)
+            
+            # If target_std is lower than minimum achievable, override it
+            if target_std < min_achievable_std:
+                target_std = min_achievable_std
+                self.risk = 1 + (target_std - 0.003) * 99 / (0.060 - 0.003)  # Convert back to risk percentage
+
         if self.target == "min":
             # Objective: Minimize portfolio variance
             portfolio_variance = cp.quad_form(w, cov_matrix)
@@ -268,7 +286,7 @@ class CalculateSpreadStocks:
         portfolio_std = np.sqrt(weights.T @ cov_matrix @ weights)
         self.portfolio_std = float(round(portfolio_std, 6))
 
-        return result_df, self.portfolio_std
+        return result_df, self.portfolio_std, self.risk
 
 
 if __name__ == "__main__":
