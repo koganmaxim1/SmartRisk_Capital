@@ -101,9 +101,10 @@ export default function UserPreferences() {
           if (key.toLowerCase().includes('weight')) return `${(value * 100).toFixed(2)}%`;
           if (key.toLowerCase().includes('investment')) return `$${value.toFixed(2)}`;
           if (key.toLowerCase().includes('std')) return value.toFixed(6);
+          if (key.toLowerCase().includes('expected_return')) return `${(value * 100).toFixed(2)}%`;
           return value.toFixed(4);
         }
-        return value;
+        return value === null ? 'N/A' : value;
       },
     }));
   };
@@ -315,7 +316,7 @@ export default function UserPreferences() {
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                           <Text strong>📈 Portfolio Expected Return: {
                             stocksSpred && stocksSpred.length > 0 
-                              ? (stocksSpred.reduce((sum, stock) => sum + (stock.weight * stock.expected_return), 0) * 100).toFixed(2) + '%'
+                              ? (stocksSpred.reduce((sum, stock) => sum + (stock.weight * stock.average_expected_return), 0) * 100).toFixed(2) + '%'
                               : 'N/A'
                           }</Text>
                         </div>

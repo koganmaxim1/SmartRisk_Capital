@@ -276,11 +276,15 @@ class CalculateSpreadStocks:
             'symbol': symbols,
             'weight': weights,
             'investment': weights * self.money_to_invest,
-            'expected_return': expected_returns
+            'historical_expected_return': expected_returns,
+            'analyst_expected_return': df['Analyst_Expected_Return'].values if 'Analyst_Expected_Return' in df.columns else [None] * len(symbols),
+            'average_expected_return': [(er + (df['Analyst_Expected_Return'].values[i] if 'Analyst_Expected_Return' in df.columns and i < len(df['Analyst_Expected_Return'].values) and not pd.isna(df['Analyst_Expected_Return'].values[i]) else er)) / 2 for i, er in enumerate(expected_returns)]
         })
         result_df['weight'] = result_df['weight'].round(6)
         result_df['investment'] = result_df['investment'].round(2)
-        result_df['expected_return'] = result_df['expected_return'].round(6)
+        result_df['historical_expected_return'] = result_df['historical_expected_return'].round(6)
+        result_df['analyst_expected_return'] = result_df['analyst_expected_return'].round(6) if 'analyst_expected_return' in result_df.columns else None
+        result_df['average_expected_return'] = result_df['average_expected_return'].round(6)
 
         self.optimal_portfolio_df = result_df
         portfolio_std = np.sqrt(weights.T @ cov_matrix @ weights)
