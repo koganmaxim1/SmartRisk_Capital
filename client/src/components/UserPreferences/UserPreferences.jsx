@@ -96,8 +96,6 @@ export default function UserPreferences() {
       title: key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
       dataIndex: key,
       key: key,
-      width: '16.67%',
-      align: 'center',
       render: (value) => {
         if (typeof value === 'number') {
           if (key.toLowerCase().includes('weight')) return `${(value * 100).toFixed(2)}%`;
