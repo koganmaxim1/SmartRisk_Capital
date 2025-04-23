@@ -24,7 +24,6 @@ export default function UserPreferences() {
   const [stocksSpred, setStocksSpred] = useState(null);
   const [portfolioSTD, setPortfolioSTD] = useState(null);
   const [stocksData, setStocksData] = useState([]);
-  const [sortedStockOptions, setSortedStockOptions] = useState([]);
   const [openModalIndex, setOpenModalIndex] = useState(null);
   const [loadingStocksSpred, setLoadingStocksSpred] = useState(false);
   const [totalMinimumWeight, setTotalMinimumWeight] = useState(0);
@@ -35,11 +34,6 @@ export default function UserPreferences() {
       try {
         const response = await axios.get('http://localhost:8000/stocks/GetAllStocksData');
         setStocksData(response.data);
-        // Create sorted options for dropdown while preserving original data
-        const sortedOptions = response.data
-          .map((stock) => ({ label: stock.symbol, value: stock.symbol }))
-          .sort((a, b) => a.label.localeCompare(b.label));
-        setSortedStockOptions(sortedOptions);
       } catch (error) {
         console.error('Failed to fetch stocks data:', error);
       }
@@ -204,55 +198,55 @@ export default function UserPreferences() {
                         placeholder="Select a stock"
                         value={selectedStocks[i]?.name || undefined}
                         onChange={(value) => handleStockChange(i, value, 'name')}
-                        options={sortedStockOptions.filter((option) => 
-                          !selectedStocks.some((s, idx) => s?.name === option.value && idx !== i)
-                        )}
+                        options={stocksData
+                          .map((stock) => ({ label: stock.symbol, value: stock.symbol }))
+                          .filter((option) => !selectedStocks.some((s, idx) => s?.name === option.value && idx !== i))}
                       />
                       <InfoCircleOutlined
                         style={{ color: '#1890ff', cursor: 'pointer' }}
                         onClick={() => setOpenModalIndex(i)}
                       />
-                    </div>
+              </div>
 
-                    {selectedStocks[i] && (
-                      <>
-                        <Text strong >⚖️ Minimum Stock Weight: {selectedStocks[i]["minimum_weight" || 0]}%</Text>
-                        <Slider
-                          min={0}
-                          max={getSliderMax(i)}
-                          value={selectedStocks[i]?.minimum_weight || 0}
-                          onChange={(value) => handleStockChange(i, value, 'minimum_weight')}
-                        />
+        {selectedStocks[i] && (
+          <>
+            <Text strong >⚖️ Minimum Stock Weight: {selectedStocks[i]["minimum_weight" || 0]}%</Text>
+            <Slider
+              min={0}
+              max={getSliderMax(i)}
+              value={selectedStocks[i]?.minimum_weight || 0}
+              onChange={(value) => handleStockChange(i, value, 'minimum_weight')}
+            />
 
-                        <Modal
-                          title={
-                            stock && (
-                              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <Text style={{ fontSize: '20px', fontWeight: 600, color: '#1890ff' }}>{stock.share}</Text>
-                                <Text type="secondary" style={{ fontSize: '14px' }}>({stock.symbol})</Text>
-                              </div>
-                            )
-                          }
-                          open={openModalIndex === i}
-                          onCancel={() => setOpenModalIndex(null)}
-                          footer={null}
-                          bodyStyle={{ backgroundColor: '#f9f9f9', borderRadius: 8 }}
-                        >
-                          {stock && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                              <p><Text strong>📄 Profile:</Text> <br />{stock.profile}</p>
-                              <p><Text strong>📆 Upcoming Events:</Text> <br />{stock.upcoming_events}</p>
-                              <p><Text strong>📊 Standard Deviation:</Text> <Text code style={{ color: '#d46b08' }}>{stock.standard_deviation}</Text></p>
-                              <p><Text strong>📈 Avg. Annual Life Expectancy:</Text> <Text code style={{ color: '#52c41a' }}>{stock.average_annual_life_expectancy}</Text></p>
-                            </div>
-                          )}
-                        </Modal>
-                      </>
-                    )}
-                  </Card>
-                );
-              })}
-            </div>
+            <Modal
+              title={
+                stock && (
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <Text style={{ fontSize: '20px', fontWeight: 600, color: '#1890ff' }}>{stock.share}</Text>
+                    <Text type="secondary" style={{ fontSize: '14px' }}>({stock.symbol})</Text>
+                  </div>
+                )
+              }
+              open={openModalIndex === i}
+              onCancel={() => setOpenModalIndex(null)}
+              footer={null}
+              bodyStyle={{ backgroundColor: '#f9f9f9', borderRadius: 8 }}
+            >
+              {stock && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <p><Text strong>📄 Profile:</Text> <br />{stock.profile}</p>
+                  <p><Text strong>📆 Upcoming Events:</Text> <br />{stock.upcoming_events}</p>
+                  <p><Text strong>📊 Standard Deviation:</Text> <Text code style={{ color: '#d46b08' }}>{stock.standard_deviation}</Text></p>
+                  <p><Text strong>📈 Avg. Annual Life Expectancy:</Text> <Text code style={{ color: '#52c41a' }}>{stock.average_annual_life_expectancy}</Text></p>
+                </div>
+              )}
+            </Modal>
+          </>
+        )}
+      </Card>
+    );
+  })}
+</div>
 
             <div>
               <Text strong style={{ color: '#ffffff' }}>💰 Money to Invest:</Text>
