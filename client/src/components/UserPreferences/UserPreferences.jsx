@@ -291,7 +291,7 @@ export default function UserPreferences() {
                   <Text type="warning">⚠️ Selected risk level was too low — showing minimum risk portfolio instead.</Text>
                 </div>
               )}
-              <p><Text strong>Risk Percentage:</Text> {riskPercentage}%</p>
+              <p><Text strong>Risk Percentage:</Text> {riskPercentage.toFixed(2)}%</p>
               <p><Text strong>Amount of Stocks:</Text> {amountOfStocks}</p>
               <p><Text strong>Money to Invest:</Text> ${moneyToInvest}</p>
               <p>
@@ -323,7 +323,7 @@ export default function UserPreferences() {
                           }</Text>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Text strong>🎯 Risk Level: {riskPercentage}%</Text>
+                          <Text strong>🎯 Risk Level: {riskPercentage.toFixed(2)}%</Text>
                         </div>
                       </div>
                     </Table.Summary.Cell>
