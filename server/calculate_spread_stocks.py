@@ -43,12 +43,13 @@ class CalculateSpreadStocks:
         self.calculate_corr_between_each_2_stocks()
 
         # Build N-stock optimal portfolio
-        portfolio_df, std, risk = self.build_optimal_portfolio()
+        portfolio_df, std, risk, risk_adjusted = self.build_optimal_portfolio()
 
         return {
             "portfolio": portfolio_df.to_dict(orient="records"),
             "portfolio_std": std,
-            "risk_percentage": risk
+            "risk_percentage": risk,
+            "risk_adjusted": risk_adjusted
         }
 
 
@@ -233,18 +234,26 @@ class CalculateSpreadStocks:
         ]
 
         # First calculate minimum risk portfolio to get minimum achievable std
+        min_risk_objective = cp.Minimize(cp.quad_form(w, cov_matrix))
+        min_risk_problem = cp.Problem(min_risk_objective, constraints)
+        min_risk_problem.solve()
+        
+        if w.value is None:
+            raise ValueError("❌ Minimum risk optimization failed — check inputs")
+        
+        min_risk_weights = w.value
+        min_achievable_std = np.sqrt(min_risk_weights.T @ cov_matrix @ min_risk_weights)
+        
+        # Check if target std is achievable, if not use minimum achievable std
+        risk_adjusted = False
+        if target_std < min_achievable_std:
+            target_std = min_achievable_std
+            risk_adjusted = True
+            # Convert back to risk percentage
+            self.risk = 1 + (target_std - 0.003) * 99 / (0.060 - 0.003)
+        
+        # Then calculate maximum return portfolio with risk constraint
         if self.target == "max":
-            min_risk_objective = cp.Minimize(cp.quad_form(w, cov_matrix))
-            min_risk_problem = cp.Problem(min_risk_objective, constraints)
-            min_risk_problem.solve()
-            
-            if w.value is None:
-                raise ValueError("❌ Minimum risk optimization failed — check inputs")
-            
-            min_risk_weights = w.value
-            min_achievable_std = np.sqrt(min_risk_weights.T @ cov_matrix @ min_risk_weights)
-            
-            # Then calculate maximum return portfolio with risk constraint
             max_return_objective = cp.Maximize(w @ expected_returns)
             risk_constraint = cp.quad_form(w, cov_matrix) <= target_std**2
             max_return_problem = cp.Problem(max_return_objective, constraints + [risk_constraint])
@@ -277,7 +286,7 @@ class CalculateSpreadStocks:
             'expected_return': expected_returns
         })
 
-        return portfolio_df, portfolio_std, self.risk
+        return portfolio_df, portfolio_std, self.risk, risk_adjusted
 
 
 if __name__ == "__main__":

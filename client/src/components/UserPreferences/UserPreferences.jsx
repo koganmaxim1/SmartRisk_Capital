@@ -107,7 +107,7 @@ export default function UserPreferences() {
       
       setStocksSpred(portfolioWithReturns);
       setPortfolioSTD(response.data.portfolio_std);
-      if (response.data.risk_percentage !== riskPercentage) {
+      if (response.data.risk_adjusted) {
         setRiskPercentage(response.data.risk_percentage);
         setRiskAdjusted(true);
       }
@@ -231,6 +231,10 @@ export default function UserPreferences() {
                         options={sortedStockOptions.filter((option) => 
                           !selectedStocks.some((s, idx) => s?.name === option.value && idx !== i)
                         )}
+                        showSearch
+                        filterOption={(input, option) =>
+                          option.label.toLowerCase().includes(input.toLowerCase())
+                        }
                       />
                       <InfoCircleOutlined
                         style={{ color: '#1890ff', cursor: 'pointer' }}
