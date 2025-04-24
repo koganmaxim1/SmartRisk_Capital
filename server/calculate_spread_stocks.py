@@ -198,10 +198,6 @@ class CalculateSpreadStocks:
     #     print(f"✅ Created {len(self.stocks_portfolio_df)} 2-stock portfolios.")
 
     def build_optimal_portfolio(self):
-        import numpy as np
-        import pandas as pd
-        import cvxpy as cp
-
         df = self.selected_stocks_data
         symbols = df['symbol'].tolist()
         n = len(symbols)
@@ -213,19 +209,18 @@ class CalculateSpreadStocks:
         # Linear mapping: 1% -> 0.003, 100% -> 0.060
         target_std = 0.003 + (self.risk - 1) * (0.060 - 0.003) / 99
 
+        # Build covariance matrix using standard deviations
         std_dict = dict(zip(df['symbol'], df['standard_deviation']))
-
-        # Build covariance matrix
         cov_matrix = np.zeros((n, n))
+        
+        # Use correlation of 0.5 between different stocks (a reasonable assumption)
+        correlation = 0.5
         for i in range(n):
             for j in range(n):
                 if i == j:
                     cov_matrix[i][j] = std_dict[symbols[i]] ** 2
                 else:
-                    cov_ij = df[df['symbol'] == symbols[i]].iloc[0].get(f"{symbols[j]}_COV", None)
-                    if pd.isna(cov_ij):
-                        cov_ij = df[df['symbol'] == symbols[j]].iloc[0].get(f"{symbols[i]}_COV", 0)
-                    cov_matrix[i][j] = cov_ij if cov_ij is not None else 0
+                    cov_matrix[i][j] = correlation * std_dict[symbols[i]] * std_dict[symbols[j]]
 
         # Define optimization variable
         w = cp.Variable(n)
@@ -249,48 +244,40 @@ class CalculateSpreadStocks:
             min_risk_weights = w.value
             min_achievable_std = np.sqrt(min_risk_weights.T @ cov_matrix @ min_risk_weights)
             
-            # If target_std is lower than minimum achievable, override it
-            if target_std < min_achievable_std:
-                target_std = min_achievable_std
-                self.risk = 1 + (target_std - 0.003) * 99 / (0.060 - 0.003)  # Convert back to risk percentage
+            # Then calculate maximum return portfolio with risk constraint
+            max_return_objective = cp.Maximize(w @ expected_returns)
+            risk_constraint = cp.quad_form(w, cov_matrix) <= target_std**2
+            max_return_problem = cp.Problem(max_return_objective, constraints + [risk_constraint])
+            max_return_problem.solve()
+            
+            if w.value is None:
+                raise ValueError("❌ Maximum return optimization failed — check inputs")
+            
+            optimal_weights = w.value
+            portfolio_std = np.sqrt(optimal_weights.T @ cov_matrix @ optimal_weights)
+            portfolio_return = optimal_weights @ expected_returns
+            
+        else:  # min risk
+            objective = cp.Minimize(cp.quad_form(w, cov_matrix))
+            problem = cp.Problem(objective, constraints)
+            problem.solve()
+            
+            if w.value is None:
+                raise ValueError("❌ Optimization failed — check inputs")
+            
+            optimal_weights = w.value
+            portfolio_std = np.sqrt(optimal_weights.T @ cov_matrix @ optimal_weights)
+            portfolio_return = optimal_weights @ expected_returns
 
-        if self.target == "min":
-            # Objective: Minimize portfolio variance
-            portfolio_variance = cp.quad_form(w, cov_matrix)
-            objective = cp.Minimize(portfolio_variance)
-        else:  # "max" mode
-            # Add risk constraint
-            portfolio_variance = cp.quad_form(w, cov_matrix)
-            constraints.append(portfolio_variance <= target_std**2)
-            # Objective: Maximize expected return
-            objective = cp.Maximize(w @ expected_returns)
-
-        problem = cp.Problem(objective, constraints)
-        problem.solve()
-
-        if w.value is None:
-            raise ValueError("❌ Optimization failed — check inputs")
-
-        weights = w.value
-        result_df = pd.DataFrame({
+        # Create portfolio DataFrame
+        portfolio_df = pd.DataFrame({
             'symbol': symbols,
-            'weight': weights,
-            'investment': weights * self.money_to_invest,
-            'historical_expected_return': expected_returns,
-            'analyst_expected_return': df['Analyst_Expected_Return'].values if 'Analyst_Expected_Return' in df.columns else [None] * len(symbols),
-            'average_expected_return': [(er + (df['Analyst_Expected_Return'].values[i] if 'Analyst_Expected_Return' in df.columns and i < len(df['Analyst_Expected_Return'].values) and not pd.isna(df['Analyst_Expected_Return'].values[i]) else er)) / 2 for i, er in enumerate(expected_returns)]
+            'weight': optimal_weights,
+            'investment': optimal_weights * self.money_to_invest,
+            'expected_return': expected_returns
         })
-        result_df['weight'] = result_df['weight'].round(6)
-        result_df['investment'] = result_df['investment'].round(2)
-        result_df['historical_expected_return'] = result_df['historical_expected_return'].round(6)
-        result_df['analyst_expected_return'] = result_df['analyst_expected_return'].round(6) if 'analyst_expected_return' in result_df.columns else None
-        result_df['average_expected_return'] = result_df['average_expected_return'].round(6)
 
-        self.optimal_portfolio_df = result_df
-        portfolio_std = np.sqrt(weights.T @ cov_matrix @ weights)
-        self.portfolio_std = float(round(portfolio_std, 6))
-
-        return result_df, self.portfolio_std, self.risk
+        return portfolio_df, portfolio_std, self.risk
 
 
 if __name__ == "__main__":
