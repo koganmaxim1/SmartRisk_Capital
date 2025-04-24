@@ -81,7 +81,31 @@ export default function UserPreferences() {
         portfolio_target: portfolioTarget,
       };
       const response = await axios.post('http://localhost:8000/stocks/CalculateSpreadStocks', requestPayload);
-      setStocksSpred(response.data.portfolio);
+      
+      // Add Analyst Expected Return and calculate Average Expected Return for each stock in the portfolio
+      const portfolioWithReturns = response.data.portfolio.map(stock => {
+        const stockData = stocksData.find(s => s.symbol === stock.symbol);
+        const historicalReturn = stockData?.expected_return;
+        const analystReturn = stockData?.Analyst_Expected_Return;
+        
+        // Calculate average expected return
+        let averageExpectedReturn = null;
+        if (historicalReturn !== undefined && analystReturn !== undefined) {
+          averageExpectedReturn = (historicalReturn + analystReturn) / 2;
+        } else if (historicalReturn !== undefined) {
+          averageExpectedReturn = historicalReturn;
+        } else if (analystReturn !== undefined) {
+          averageExpectedReturn = analystReturn;
+        }
+        
+        return {
+          ...stock,
+          analyst_expected_return: analystReturn,
+          average_expected_return: averageExpectedReturn
+        };
+      });
+      
+      setStocksSpred(portfolioWithReturns);
       setPortfolioSTD(response.data.portfolio_std);
       if (response.data.risk_percentage !== riskPercentage) {
         setRiskPercentage(response.data.risk_percentage);
@@ -98,55 +122,23 @@ export default function UserPreferences() {
 
   const generateColumnsFromData = (data) => {
     if (!data || data.length === 0) return [];
-    return [
-      {
-        title: 'Symbol',
-        dataIndex: 'symbol',
-        key: 'symbol',
-        width: '16.67%',
-        align: 'center',
+    return Object.keys(data[0]).map((key) => ({
+      title: key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+      dataIndex: key,
+      key: key,
+      width: '16.67%',
+      align: 'center',
+      render: (value) => {
+        if (typeof value === 'number') {
+          if (key.toLowerCase().includes('weight')) return `${(value * 100).toFixed(2)}%`;
+          if (key.toLowerCase().includes('investment')) return `$${value.toFixed(2)}`;
+          if (key.toLowerCase().includes('std')) return value.toFixed(6);
+          if (key.toLowerCase().includes('expected_return')) return `${(value * 100).toFixed(2)}%`;
+          return value.toFixed(4);
+        }
+        return value === null ? 'N/A' : value;
       },
-      {
-        title: 'Weight',
-        dataIndex: 'weight',
-        key: 'weight',
-        width: '16.67%',
-        align: 'center',
-        render: (value) => `${(value * 100).toFixed(2)}%`,
-      },
-      {
-        title: 'Investment',
-        dataIndex: 'investment',
-        key: 'investment',
-        width: '16.67%',
-        align: 'center',
-        render: (value) => `$${value.toFixed(2)}`,
-      },
-      {
-        title: 'Expected Return',
-        dataIndex: 'expected_return',
-        key: 'expected_return',
-        width: '16.67%',
-        align: 'center',
-        render: (value) => `${(value * 100).toFixed(2)}%`,
-      },
-      {
-        title: 'Analyst Expected Return',
-        dataIndex: 'analyst_expected_return',
-        key: 'analyst_expected_return',
-        width: '16.67%',
-        align: 'center',
-        render: (value) => value ? `${(value * 100).toFixed(2)}%` : 'N/A',
-      },
-      {
-        title: 'Average Expected Return',
-        dataIndex: 'average_expected_return',
-        key: 'average_expected_return',
-        width: '16.67%',
-        align: 'center',
-        render: (value) => value ? `${(value * 100).toFixed(2)}%` : 'N/A',
-      },
-    ];
+    }));
   };
 
   return (
