@@ -259,7 +259,7 @@ export default function UserPreferences() {
                         )}
                         showSearch
                         filterOption={(input, option) =>
-                          option.label.toLowerCase().includes(input.toLowerCase())
+                          option.label.toLowerCase().startsWith(input.toLowerCase())
                         }
                       />
                       <InfoCircleOutlined
