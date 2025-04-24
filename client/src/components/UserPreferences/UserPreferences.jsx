@@ -29,6 +29,7 @@ export default function UserPreferences() {
   const [loadingStocksSpred, setLoadingStocksSpred] = useState(false);
   const [totalMinimumWeight, setTotalMinimumWeight] = useState(0);
   const [riskAdjusted, setRiskAdjusted] = useState(false);
+  const [globalMinWeight, setGlobalMinWeight] = useState(0);
 
   useEffect(() => {
     const fetchStocksData = async () => {
@@ -62,9 +63,19 @@ export default function UserPreferences() {
   };
   
 
+  const handleGlobalMinWeightChange = (value) => {
+    setGlobalMinWeight(value);
+    // Update all selected stocks with the new global minimum weight
+    const updatedStocks = selectedStocks.map(stock => ({
+      ...stock,
+      minimum_weight: value
+    }));
+    setSelectedStocks(updatedStocks);
+  };
+
   const handleStockChange = (index, value, key) => {
     const newStocks = [...selectedStocks];
-    if (!newStocks[index]) newStocks[index] = {"minimum_weight":0};
+    if (!newStocks[index]) newStocks[index] = {"minimum_weight": globalMinWeight};
     newStocks[index][key] = value;
     setSelectedStocks(newStocks);
   };
@@ -205,11 +216,26 @@ export default function UserPreferences() {
                 value={amountOfStocks}
                 onChange={(value) => {
                   setAmountOfStocks(value);
-                  setSelectedStocks(Array(value).fill(null));
+                  setSelectedStocks(Array(value).fill(null).map(() => ({ minimum_weight: globalMinWeight })));
                 }}
                 className="ml-2"
               />
             </div>
+
+            {amountOfStocks > 0 && (
+              <div>
+                <Text strong style={{ color: '#ffffff' }}>
+                  ⚖️ Global Minimum Stock Weight: {globalMinWeight}%
+                </Text>
+                <Slider
+                  min={0}
+                  max={Math.floor(100 / amountOfStocks)}
+                  value={globalMinWeight}
+                  onChange={handleGlobalMinWeightChange}
+                  className="mt-2"
+                />
+              </div>
+            )}
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
               {Array.from({ length: amountOfStocks }, (_, i) => {
@@ -244,11 +270,11 @@ export default function UserPreferences() {
 
                     {selectedStocks[i] && (
                       <>
-                        <Text strong >⚖️ Minimum Stock Weight: {selectedStocks[i]["minimum_weight" || 0]}%</Text>
+                        <Text strong >⚖️ Minimum Stock Weight: {selectedStocks[i]?.minimum_weight || globalMinWeight}%</Text>
                         <Slider
                           min={0}
                           max={getSliderMax(i)}
-                          value={selectedStocks[i]?.minimum_weight || 0}
+                          value={selectedStocks[i]?.minimum_weight || globalMinWeight}
                           onChange={(value) => handleStockChange(i, value, 'minimum_weight')}
                         />
 
