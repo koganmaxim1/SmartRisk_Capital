@@ -64,6 +64,14 @@ const getRiskProfileMessage = (score) => {
   return "You have a very aggressive risk profile";
 };
 
+const getScoreRange = (score) => {
+  const minScore = 2;
+  const maxScore = 60;
+  const lowerBound = Math.max(minScore, score - 3);
+  const upperBound = Math.min(maxScore, score + 3);
+  return `${lowerBound}–${upperBound}`;
+};
+
 export default function InvestmentProfile() {
   const navigate = useNavigate();
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -288,7 +296,7 @@ export default function InvestmentProfile() {
                 transition: 'all 0.3s ease'
               }}>
                 <Text style={{ fontSize: '24px', color: '#ffffff', marginBottom: '16px', display: 'block' }}>
-                  Your Risk Score: {riskScore} points
+                  Your Risk Score: {getScoreRange(riskScore)} points
                 </Text>
                 <Text style={{ fontSize: '18px', color: '#ffffff', marginBottom: '24px', display: 'block' }}>
                   {getRiskProfileMessage(riskScore)}
@@ -310,7 +318,7 @@ export default function InvestmentProfile() {
               Your Risk Profile
             </Title>
             <Text style={{ fontSize: '24px', color: '#ffffff', marginBottom: '16px', display: 'block' }}>
-              Risk Score: {riskScore} points
+              Risk Score: {getScoreRange(riskScore)} points
             </Text>
             <Text style={{ fontSize: '18px', color: '#ffffff', marginBottom: '32px', display: 'block' }}>
               {getRiskProfileMessage(riskScore)}

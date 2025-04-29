@@ -16,6 +16,14 @@ import { useLocation } from 'react-router-dom';
 
 const { Text, Title } = Typography;
 
+const getScoreRange = (score) => {
+  const minScore = 2;
+  const maxScore = 60;
+  const lowerBound = Math.max(minScore, score - 3);
+  const upperBound = Math.min(maxScore, score + 3);
+  return `${lowerBound}–${upperBound}`;
+};
+
 export default function UserPreferences() {
   const location = useLocation();
   const [riskScore, setRiskScore] = useState(location.state?.riskScore || 30); // Default to 30 if no score provided
@@ -181,7 +189,7 @@ export default function UserPreferences() {
           Your Risk Profile
         </Title>
         <Text style={{ fontSize: '24px', color: '#1890ff', display: 'block', marginBottom: '16px' }}>
-          Risk Score: {riskScore} points
+          Risk Score: {getScoreRange(riskScore)} points
         </Text>
         <Text style={{ color: '#ffffff', fontSize: '16px' }}>
           Your investment preferences will be guided by your personal risk profile
