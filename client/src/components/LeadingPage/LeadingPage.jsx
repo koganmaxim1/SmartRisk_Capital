@@ -8,7 +8,7 @@ export default function LeadingPage() {
   const navigate = useNavigate();
 
   const handleStart = () => {
-    navigate('/preferences'); // route to UserPreferences component
+    navigate('/investment-profile'); // route to InvestmentProfile component
   };
 
   return (

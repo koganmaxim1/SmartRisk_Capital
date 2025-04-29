@@ -12,10 +12,13 @@ import {
 } from 'antd';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import { useLocation } from 'react-router-dom';
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 export default function UserPreferences() {
+  const location = useLocation();
+  const [riskScore, setRiskScore] = useState(location.state?.riskScore || 30); // Default to 30 if no score provided
   const [portfolioTarget, setPortfolioTarget] = useState();
   const [riskPercentage, setRiskPercentage] = useState(5);
   const [amountOfStocks, setAmountOfStocks] = useState(0);
@@ -163,6 +166,28 @@ export default function UserPreferences() {
         backgroundColor: '#141e30',
       }}
     >
+      {/* Risk Score Display */}
+      <Card
+        style={{
+          width: '100%',
+          maxWidth: '720px',
+          backgroundColor: '#243b55',
+          border: '1px solid #243b55',
+          marginBottom: '32px',
+          textAlign: 'center',
+        }}
+      >
+        <Title level={2} style={{ color: '#ffffff', marginBottom: '8px' }}>
+          Your Risk Profile
+        </Title>
+        <Text style={{ fontSize: '24px', color: '#1890ff', display: 'block', marginBottom: '16px' }}>
+          Risk Score: {riskScore} points
+        </Text>
+        <Text style={{ color: '#ffffff', fontSize: '16px' }}>
+          Your investment preferences will be guided by your personal risk profile
+        </Text>
+      </Card>
+
       {/* 🎯 Investment Preferences Card */}
       <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center', width: '100%' }}>
         <Card
