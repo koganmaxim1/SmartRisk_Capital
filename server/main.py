@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 # Define the path to the CSV file
-excel_file_path = r"C:\Projects\SmartRisk_Capital\server\stocks_data_MVP.csv"
+excel_file_path = "stocks_data_MVP.csv"
 
 @app.post("/stocks/CalculateSpreadStocks")
 def get_calculate_spread_stocks(request: StockRequest):
