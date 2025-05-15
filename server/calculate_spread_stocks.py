@@ -56,33 +56,35 @@ class CalculateSpreadStocks:
 import requests
 import tempfile
 
-# Download the file from Supabase
-xls_url = "https://lhacesogkispjqlndfch.supabase.co/storage/v1/object/public/excel-files/00557070.xlsx"
-response = requests.get(xls_url)
+    def add_daily_change_to_each_stock(self):
+        # Download the Excel file from Supabase
+        xls_url = "https://lhacesogkispjq-lndfch.supabase.co/storage/v1/object/public/excel-files/00557070.xlsx"
+        response = requests.get(xls_url)
 
-with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_file:
-    tmp_file.write(response.content)
-    tmp_path = tmp_file.name
+        # Save it temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_file:
+            tmp_file.write(response.content)
+            tmp_path = tmp_file.name
 
-# Load Excel from the temp file
-xls = pd.ExcelFile(tmp_path)
-print("Loaded sheets:", xls.sheet_names)
+        # Load Excel file using pandas
+        xls = pd.ExcelFile(tmp_path)
 
+        # Optional: print sheet names for debugging
+        print("Loaded sheets:", xls.sheet_names)
 
         # Add empty column
-        self.selected_stocks_data['Change_data'] = None
+        self.selected_stocks_data['change_data'] = None
 
         # Fill Change_data for each stock that has a matching sheet
         for idx in self.selected_stocks_data.index:
             symbol = self.selected_stocks_data.loc[idx, 'symbol']
             if symbol in xls.sheet_names:
                 df = xls.parse(symbol)
-                if 'Change' in df.columns and 'Date' in df.columns:
-                    # Create list of dictionaries with date and change
-                    change_data = [{'date': date, 'change': change} 
-                                 for date, change in zip(df['Date'], df['Change']) 
-                                 if pd.notna(change)]
-                    self.selected_stocks_data.at[idx, 'Change_data'] = change_data
+                if 'change' in df.columns and 'Date' in df.columns:
+                    change_data = [{'date': date, 'change': change}
+                                for date, change in zip(df['Date'], df['change'])
+                                if pd.notna(change)]
+                    self.selected_stocks_data.at[idx, 'change_data'] = change_data
 
     def calculate_cov_between_each_2_stocks(self):
         change_dict = dict(zip(self.selected_stocks_data['symbol'], self.selected_stocks_data['Change_data']))
