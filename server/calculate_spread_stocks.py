@@ -70,7 +70,7 @@ print("Loaded sheets:", xls.sheet_names)
 
 
         # Add empty column
-        self.selected_stocks_data['Change_data'] = None
+         self.selected_stocks_data['Change_data'] = None
 
         # Fill Change_data for each stock that has a matching sheet
         for idx in self.selected_stocks_data.index:
