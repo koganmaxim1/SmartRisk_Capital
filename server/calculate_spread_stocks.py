@@ -55,7 +55,10 @@ class CalculateSpreadStocks:
 
     def add_daily_change_to_each_stock(self):
         # Load Excel file
-        xls = pd.ExcelFile(r"C:\Users\Kogan\OneDrive\שולחן העבודה\סטארטאפ\SmartRisk Capital\נתונים לMVP\69DD2E10.xlsx")
+        import os
+        file_path = os.path.join(os.path.dirname(__file__), "00557070.xlsx")
+        xls = pd.ExcelFile(file_path)
+
 
         # Add empty column
         self.selected_stocks_data['Change_data'] = None
