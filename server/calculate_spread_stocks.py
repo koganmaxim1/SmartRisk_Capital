@@ -66,6 +66,7 @@ with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_file:
 
 # Load Excel from the temp file
 xls = pd.ExcelFile(tmp_path)
+print("Loaded sheets:", xls.sheet_names)
 
 
         # Add empty column
