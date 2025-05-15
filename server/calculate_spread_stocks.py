@@ -53,10 +53,19 @@ class CalculateSpreadStocks:
         }
 
 
-    def add_daily_change_to_each_stock(self):
-        # Load Excel file
-       xls_url = "https://lhacesogkispjqlndfch.supabase.co/storage/v1/object/public/excel-files/00557070.xlsx"
-       xls = pd.ExcelFile(xls_url)
+import requests
+import tempfile
+
+# Download the file from Supabase
+xls_url = "https://lhacesogkispjqlndfch.supabase.co/storage/v1/object/public/excel-files/00557070.xlsx"
+response = requests.get(xls_url)
+
+with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_file:
+    tmp_file.write(response.content)
+    tmp_path = tmp_file.name
+
+# Load Excel from the temp file
+xls = pd.ExcelFile(tmp_path)
 
 
         # Add empty column
