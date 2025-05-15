@@ -55,9 +55,8 @@ class CalculateSpreadStocks:
 
     def add_daily_change_to_each_stock(self):
         # Load Excel file
-        import os
-        file_path = os.path.join(os.path.dirname(__file__), "00557070.xlsx")
-        xls = pd.ExcelFile(file_path)
+       xls_url = "https://lhacesogkispjqlndfch.supabase.co/storage/v1/object/public/excel-files/00557070.xlsx"
+       xls = pd.ExcelFile(xls_url)
 
 
         # Add empty column
