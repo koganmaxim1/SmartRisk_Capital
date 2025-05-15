@@ -73,7 +73,11 @@ import tempfile
         print("Loaded sheets:", xls.sheet_names)
 
         # Add empty column
+<<<<<<< HEAD
         self.selected_stocks_data['change_data'] = None
+=======
+        self.selected_stocks_data['Change_data'] = None
+>>>>>>> ca1bc790c5a530d1fa0bdee68dab5b754d4f2fe9
 
         # Fill Change_data for each stock that has a matching sheet
         for idx in self.selected_stocks_data.index:
