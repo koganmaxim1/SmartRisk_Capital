@@ -23,6 +23,7 @@ class StockRequest(BaseModel):
 
 
 class CalculateSpreadStocks:
+
     def __init__(self, request: StockRequest, data: pd.DataFrame):
         self.risk = request.risk_percentage
         self.n = request.amount_of_stocks
@@ -30,10 +31,8 @@ class CalculateSpreadStocks:
         self.selected_stocks = [stock.name for stock in request.selected_stocks]
         self.target = request.portfolio_target
         self.stocks_portfolio_df = None
-        # Convert data to DataFrame if it's not already
-        self.selected_stocks_data = pd.DataFrame(data.loc[data["symbol"].isin(self.selected_stocks)])
-        weights_map = {stock.name: stock.minimum_weight for stock in request.selected_stocks}
-        self.selected_stocks_data["min_weight"] = self.selected_stocks_data["symbol"].map(weights_map)
+        self.selected_stocks_data = data.loc[data["symbol"].isin(self.selected_stocks)]
+        self.selected_stocks_data["min_weight"] = [stock.minimum_weight for stock in request.selected_stocks]
         self.optimal_portfolio_df = None
         self.portfolio_std = None
 
@@ -52,11 +51,11 @@ class CalculateSpreadStocks:
             "risk_adjusted": risk_adjusted
         }
 
-
-import requests
-import tempfile
-
     def add_daily_change_to_each_stock(self):
+        import requests
+        import tempfile
+        import pandas as pd
+
         # Download the Excel file from Supabase
         xls_url = "https://lhacesogkispjq-lndfch.supabase.co/storage/v1/object/public/excel-files/00557070.xlsx"
         response = requests.get(xls_url)
@@ -68,26 +67,19 @@ import tempfile
 
         # Load Excel file using pandas
         xls = pd.ExcelFile(tmp_path)
-
-        # Optional: print sheet names for debugging
         print("Loaded sheets:", xls.sheet_names)
 
         # Add empty column
-<<<<<<< HEAD
         self.selected_stocks_data['change_data'] = None
-=======
-        self.selected_stocks_data['Change_data'] = None
->>>>>>> ca1bc790c5a530d1fa0bdee68dab5b754d4f2fe9
 
-        # Fill Change_data for each stock that has a matching sheet
+        # Fill change_data
         for idx in self.selected_stocks_data.index:
             symbol = self.selected_stocks_data.loc[idx, 'symbol']
             if symbol in xls.sheet_names:
                 df = xls.parse(symbol)
-                if 'change' in df.columns and 'Date' in df.columns:
+                if 'Change' in df.columns and 'Date' in df.columns:
                     change_data = [{'date': date, 'change': change}
-                                for date, change in zip(df['Date'], df['change'])
-                                if pd.notna(change)]
+                                   for date, change in zip(df['Date'], df['Change']) if pd.notna(change)]
                     self.selected_stocks_data.at[idx, 'change_data'] = change_data
 
     def calculate_cov_between_each_2_stocks(self):
