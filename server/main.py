@@ -34,7 +34,7 @@ def get_stocks_data():
         tmp_path = tmp_file.name
 
     xls = pd.ExcelFile(tmp_path)
-    df = pd.read_excel(xls, sheet_name=0)
+    df = pd.read_excel(xls, sheet_name=xls.sheet_names[0])
     df = df.replace({float("inf"): 0, float("-inf"): 0}).fillna(0)
 
     return JSONResponse(content=df.to_dict(orient="records"))
