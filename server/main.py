@@ -27,7 +27,7 @@ def get_stocks_data():
     from fastapi.responses import JSONResponse
 
     try:
-        xls_url = "https://lhacesogkispjqlndfch.supabase.co/storage/v1/object/public/excel-files//00557070.xlsx"
+        xls_url = "https://lhacesogkispjqlndfch.supabase.co/storage/v1/object/public/excel-files/00557070.xlsx"
         response = requests.get(xls_url)
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_file:
